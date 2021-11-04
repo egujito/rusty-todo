@@ -1,7 +1,8 @@
-use std::process::Command;
-
 extern crate ncurses;
 use ncurses::*;
+
+const KEY_K_LC: i32 = 107;
+const KEY_J_LC: i32 = 106;
 
 enum TaskState {
 
@@ -75,13 +76,13 @@ fn ui_loop (task_win: WINDOW) {
 
       match choice {
 
-          107 => {
+          KEY_K_LC => {
             if curr_item != 0 {
               curr_item -= 1;
             }
           }
 
-          106 => {
+          KEY_J_LC => {
             if curr_item != (task_list.len() as i32) - 1 {
               curr_item += 1;
             }
