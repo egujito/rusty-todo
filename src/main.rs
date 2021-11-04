@@ -1,3 +1,5 @@
+use std::process::Command;
+
 extern crate ncurses;
 use ncurses::*;
 
@@ -5,6 +7,7 @@ enum TaskState {
 
   Done,
   Todo
+
 }
 
 struct Task { 
@@ -14,18 +17,11 @@ struct Task {
 
 }
 
-fn startup_test() -> Vec<Task>{
+impl TaskState {
 
-  let n = 10;
-  let mut task_list: Vec<Task> = Vec::with_capacity(n);
-  unsafe { 
-    task_list.set_len(n); 
-  }
 
-  task_list
 
 }
-
 fn create_win (max_y: i32, max_x: i32) -> WINDOW {
 
   let win = newwin(max_y - 10, max_x - 10, 5, 5);
@@ -37,53 +33,60 @@ fn create_win (max_y: i32, max_x: i32) -> WINDOW {
 
 fn ui_loop (task_win: WINDOW) {
 
-  let mut task_list = startup_test();
-
-  for x in 0..10 {
-
-      task_list[x].content = "".to_string();
-      task_list[x].state = TaskState::Todo;
-  }
-
-
+  let mut task_list: Vec<Task> = Vec::new();
 
   let mut curr_item: i32 = 0;
 
+  let tasky = Task { content: "LOL".to_string(), state: TaskState::Done}; // test
+  let tas = Task { content: "AAAAAAAAAAA".to_string(), state: TaskState::Todo}; // test
+  task_list.push(tasky);
+  task_list.push(tas);
+
   loop {
 
-      for i in 0..10{
+      for i in 0..(task_list.len() as i32) {
+        
 
+        if i == curr_item {
 
-        if task_list[i as usize].content != "" {
+            wattron(task_win, A_REVERSE());
 
-          if i == curr_item {
-             wattron(task_win, A_REVERSE());
-          }
-
-          match task_list[i as usize].state {
-
-            TaskState::Done => {
-
-              mvwprintw(task_win, i+1, 1, &format!("[ X ] {}", task_list[i as usize].content));
-
-            }
-            TaskState::Todo => {
-
-              mvwprintw(task_win, i+1, 1, &format!("[   ] {}", task_list[i as usize].content));
-
-            }
-          }
-          wattroff(task_win, A_REVERSE());
         }
-          
 
-      }
+        match task_list[i as usize].state {
 
-      let choice: i32 = wgetch(task_win);
+          TaskState::Done => {
+
+            mvwprintw(task_win, i+1, 1, &format!("[ X ] {}", task_list[i as usize].content));
+
+          }
+
+          TaskState::Todo => {
+
+            mvwprintw(task_win, i+1, 1, &format!("[   ] {}", task_list[i as usize].content));
+
+          }
+        }
+        wattroff(task_win, A_REVERSE());
+
+      }  
+
+      let choice = wgetch(task_win);
 
       match choice {
-          _ => {curr_item = 0}
 
+          107 => {
+            if curr_item != 0 {
+              curr_item -= 1;
+            }
+          }
+
+          106 => {
+            if curr_item != (task_list.len() as i32) - 1 {
+              curr_item += 1;
+            }
+          }
+          _ => {}
       }
   }
 
@@ -108,6 +111,9 @@ fn main()
 {
 
   initscr();
+
+  keypad(stdscr(), true);
+  cbreak();
 
   launch_ui();
 
