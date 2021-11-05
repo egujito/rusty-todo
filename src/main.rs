@@ -3,11 +3,20 @@ use ncurses::*;
 
 const KEY_K_LC: i32 = 107;
 const KEY_J_LC: i32 = 106;
+const KEY_ENTER: i32 = 10;
+
 
 enum TaskState {
 
   Done,
   Todo
+
+}
+
+struct Ui {
+
+  task_win: WINDOW,
+  input_win: WINDOW,
 
 }
 
@@ -18,28 +27,70 @@ struct Task {
 
 }
 
-impl TaskState {
+impl Task {
 
+  fn new(content: String, state: TaskState) -> Self {
+    Self {
+      content,
+      state
+    }
+  }
 
+  fn toggle_state(&mut self) {
+    
+    match self.state {
+      TaskState::Done => {
+        self.state = TaskState::Todo
+      }
+      TaskState::Todo => {
+        self.state = TaskState::Done
+      }
+    }
+  }
 
 }
-fn create_win (max_y: i32, max_x: i32) -> WINDOW {
 
-  let win = newwin(max_y - 10, max_x - 10, 5, 5);
-  box_(win, 0, 0);
-  wrefresh(win);
-  win
+impl Ui {
+
+  fn new(task_win: WINDOW, input_win: WINDOW) -> Self {
+
+    Self {
+      task_win,
+      input_win   
+    } 
+
+  }
+
+  fn create_task_win (max_y: i32, max_x: i32) -> WINDOW {
+
+    let win = newwin(max_y - 10, max_x - 10, 5, 5);
+    box_(win, 0, 0);
+    wrefresh(win);
+    win
+  
+  }
+
+  fn create_input_win (max_x: i32) -> WINDOW {
+
+    let win = newwin(3, max_x - 10, 1, 5);
+    box_(win, 0, 0); // to comment on future.
+    wrefresh(win);
+    win
+
+  }
 
 }
 
-fn ui_loop (task_win: WINDOW) {
+
+fn ui_loop (ui: Ui) {
 
   let mut task_list: Vec<Task> = Vec::new();
 
   let mut curr_item: i32 = 0;
 
-  let tasky = Task { content: "LOL".to_string(), state: TaskState::Done}; // test
-  let tas = Task { content: "AAAAAAAAAAA".to_string(), state: TaskState::Todo}; // test
+  let tasky = Task::new("Lol".to_string(), TaskState::Todo);
+  let tas = Task::new("hhhhhh".to_string(), TaskState::Done);
+
   task_list.push(tasky);
   task_list.push(tas);
 
@@ -50,7 +101,7 @@ fn ui_loop (task_win: WINDOW) {
 
         if i == curr_item {
 
-            wattron(task_win, A_REVERSE());
+            wattron(ui.task_win, A_REVERSE());
 
         }
 
@@ -58,21 +109,21 @@ fn ui_loop (task_win: WINDOW) {
 
           TaskState::Done => {
 
-            mvwprintw(task_win, i+1, 1, &format!("[ X ] {}", task_list[i as usize].content));
+            mvwprintw(ui.task_win, i+1, 1, &format!("[ X ] {}", task_list[i as usize].content));
 
           }
 
           TaskState::Todo => {
 
-            mvwprintw(task_win, i+1, 1, &format!("[   ] {}", task_list[i as usize].content));
+            mvwprintw(ui.task_win, i+1, 1, &format!("[   ] {}", task_list[i as usize].content));
 
           }
         }
-        wattroff(task_win, A_REVERSE());
+        wattroff(ui.task_win, A_REVERSE());
 
       }  
 
-      let choice = wgetch(task_win);
+      let choice = wgetch(ui.task_win);
 
       match choice {
 
@@ -86,6 +137,10 @@ fn ui_loop (task_win: WINDOW) {
             if curr_item != (task_list.len() as i32) - 1 {
               curr_item += 1;
             }
+          }
+
+          KEY_ENTER => { 
+            task_list[curr_item as usize].toggle_state();
           }
           _ => {}
       }
@@ -102,9 +157,12 @@ pub fn launch_ui() {
 
   getmaxyx(stdscr(), &mut max_y, &mut max_x);
 
-  let task_win = create_win(max_y, max_x);
+  let ui = Ui::new(Ui::create_task_win(max_y, max_x), Ui::create_input_win(max_x));
+
+  box_(ui.input_win, 0, 0);
+  wrefresh(ui.input_win);
   
-  ui_loop(task_win);
+  ui_loop(ui);
 
 }   
 
