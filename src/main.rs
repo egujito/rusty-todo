@@ -3,6 +3,7 @@ use ncurses::*;
 
 const KEY_K_LC: i32 = 107;
 const KEY_J_LC: i32 = 106;
+const KEY_I_LC: i32 = 105;
 const KEY_ENTER: i32 = 10;
 
 
@@ -48,6 +49,9 @@ impl Task {
     }
   }
 
+  fn add_task(&mut self) {
+
+  }
 }
 
 impl Ui {
@@ -73,18 +77,91 @@ impl Ui {
   fn create_input_win (max_x: i32) -> WINDOW {
 
     let win = newwin(3, max_x - 10, 1, 5);
-    box_(win, 0, 0); // to comment on future.
+    //box_(win, 0, 0); // to comment on future.
     wrefresh(win);
     win
 
   }
 
+  fn read_task (&mut self) {
+
+    wclear(self.input_win);
+    curs_set(CURSOR_VISIBILITY::CURSOR_VISIBLE);
+	  echo();
+
+    let mut curs_pos: i32 = 9;
+
+
+    wmove(self.input_win, 0, curs_pos);
+
+    let mut buffer: String = String::new();
+
+    mvwprintw(self.input_win, 0, 0, "[ I ] > ");
+    
+    loop {
+
+      mvwprintw(self.input_win, 0, 9, &buffer);
+      wmove(self.input_win, 0, curs_pos);
+
+      let key: i32 = wgetch(self.input_win);
+
+      match key {
+
+        32..=126 => { // ALPHABET LETTERS
+          buffer.push(key as u8 as char);
+          curs_pos += 1;
+        }
+        KEY_BACKSPACE => {
+
+          if curs_pos > 9 {
+
+            buffer.pop();
+            curs_pos -= 1;
+
+            wclear(self.input_win);
+            mvwprintw(self.input_win, 0, 0, "[ I ] > ");
+
+            wmove(self.input_win, 0, curs_pos);
+
+          }
+
+        }
+        _ => {}
+      }
+
+    }
+
+    curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
+	  noecho();
+
+
+  } 
+
 }
 
+trait VecOp {
 
-fn ui_loop (ui: Ui) {
+  fn get_total_tasks(&mut self) -> i32;
+  fn get_length_for_iterator(&mut self) -> i32;
+}
+
+impl VecOp for Vec<Task> {
+
+  fn get_total_tasks(&mut self) -> i32 {
+
+    self.len() as i32 - 1
+  }
+
+  fn get_length_for_iterator(&mut self) -> i32 {
+    self.len() as i32
+  }
+}
+
+fn ui_loop (ui: &mut Ui) {
 
   let mut task_list: Vec<Task> = Vec::new();
+
+  keypad(ui.input_win, true);
 
   let mut curr_item: i32 = 0;
 
@@ -96,7 +173,7 @@ fn ui_loop (ui: Ui) {
 
   loop {
 
-      for i in 0..(task_list.len() as i32) {
+      for i in 0..task_list.get_length_for_iterator(){
         
 
         if i == curr_item {
@@ -134,13 +211,17 @@ fn ui_loop (ui: Ui) {
           }
 
           KEY_J_LC => {
-            if curr_item != (task_list.len() as i32) - 1 {
+            if curr_item != task_list.get_total_tasks() {
               curr_item += 1;
             }
           }
 
           KEY_ENTER => { 
             task_list[curr_item as usize].toggle_state();
+          }
+
+          KEY_I_LC => {
+            ui.read_task();
           }
           _ => {}
       }
@@ -157,12 +238,12 @@ pub fn launch_ui() {
 
   getmaxyx(stdscr(), &mut max_y, &mut max_x);
 
-  let ui = Ui::new(Ui::create_task_win(max_y, max_x), Ui::create_input_win(max_x));
+  let mut ui = Ui::new(Ui::create_task_win(max_y, max_x), Ui::create_input_win(max_x));
 
   box_(ui.input_win, 0, 0);
   wrefresh(ui.input_win);
   
-  ui_loop(ui);
+  ui_loop(&mut ui);
 
 }   
 
@@ -171,7 +252,6 @@ fn main()
 
   initscr();
 
-  keypad(stdscr(), true);
   cbreak();
 
   launch_ui();
