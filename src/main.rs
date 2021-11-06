@@ -56,10 +56,6 @@ impl Task {
       }
     }
   }
-
-  //fn add_task(&mut self) {
-
- // }
 }
 
 impl Ui {
@@ -91,7 +87,7 @@ impl Ui {
 
   }
 
-  fn read_buffer (&mut self, curr_item: i32, buffer: &mut String, mode: InputState) -> Result<Task, &'static str> {
+  fn read_buffer (&mut self, buffer: &mut String, mode: InputState) -> Result<Task, &'static str> {
 
     curs_set(CURSOR_VISIBILITY::CURSOR_VISIBLE);
 	  echo();
@@ -160,9 +156,13 @@ impl Ui {
 
   fn add_task (&mut self, curr_item: i32, task_list: &mut Vec<Task>, mode: InputState) {
 
+    let mut max_x = 0;
+    let mut max_y = 0;
+    getmaxyx(stdscr(), &mut max_y, &mut max_x);
+
     match mode {
       InputState::New => {
-        match self.read_buffer(0, &mut String::new(), mode) {
+        match self.read_buffer(&mut String::new(), mode) {
           Ok(new_task) => {
             task_list.push(new_task);
           }
@@ -170,18 +170,16 @@ impl Ui {
         }
       }
       InputState::Edit => {
-        match self.read_buffer(curr_item, &mut task_list[curr_item as usize].content, mode) {
+        match self.read_buffer(&mut task_list[curr_item as usize].content, mode) {
           Ok(new_task) => {
+            wclear(self.task_win);
+            self.task_win = Ui::create_task_win(max_y, max_x);
             task_list[curr_item as usize].content = new_task.content;
           }
           Err(_) => {}
         }
       }
     }
-
-    let mut max_x = 0;
-    let mut max_y = 0;
-    getmaxyx(stdscr(), &mut max_y, &mut max_x);
 
     Ui::create_input_win(max_x, max_y, "");
     curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
@@ -216,12 +214,6 @@ fn ui_loop (ui: &mut Ui) {
   let mut task_list: Vec<Task> = Vec::new();
 
   let mut curr_item: i32 = 0;
-
-  let tasky = Task::new("Lol".to_string(), TaskState::Todo);
-  let tas = Task::new("hhhhhh".to_string(), TaskState::Done);
-
-  task_list.push(tasky);
-  task_list.push(tas);
 
   loop {
 
