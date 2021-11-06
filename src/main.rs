@@ -1,12 +1,13 @@
 extern crate ncurses;
 use ncurses::*;
 
+
 const KEY_K_LC: i32 = 107;
 const KEY_J_LC: i32 = 106;
 const KEY_I_LC: i32 = 105;
 const KEY_ENTER: i32 = 10;
 const KEY_ESCAPE: i32 = 27;
-
+const KEY_E_LC: i32 = 101;
 
 enum InputState {
 
@@ -90,7 +91,7 @@ impl Ui {
 
   }
 
-  fn read_buffer (&mut self, buffer: &mut String, mode: InputState) -> Result<Task, &'static str> {
+  fn read_buffer (&mut self, curr_item: i32, buffer: &mut String, mode: InputState) -> Result<Task, &'static str> {
 
     curs_set(CURSOR_VISIBILITY::CURSOR_VISIBLE);
 	  echo();
@@ -114,6 +115,7 @@ impl Ui {
 
         InputState::Edit => {
           Ui::create_input_win(max_x, max_y, "[ E ] >");
+          curs_pos = 9+buffer.len() as i32
         } 
       }
 
@@ -156,11 +158,11 @@ impl Ui {
   }
 
 
-  fn add_task (&mut self, task_list: &mut Vec<Task>, mode: InputState) {
+  fn add_task (&mut self, curr_item: i32, task_list: &mut Vec<Task>, mode: InputState) {
 
     match mode {
       InputState::New => {
-        match self.read_buffer(&mut String::new(), mode) {
+        match self.read_buffer(0, &mut String::new(), mode) {
           Ok(new_task) => {
             task_list.push(new_task);
           }
@@ -168,7 +170,12 @@ impl Ui {
         }
       }
       InputState::Edit => {
-
+        match self.read_buffer(curr_item, &mut task_list[curr_item as usize].content, mode) {
+          Ok(new_task) => {
+            task_list[curr_item as usize].content = new_task.content;
+          }
+          Err(_) => {}
+        }
       }
     }
 
@@ -181,7 +188,6 @@ impl Ui {
 	  noecho();
 
   } 
-
 }
 
 trait VecOp {
@@ -267,7 +273,11 @@ fn ui_loop (ui: &mut Ui) {
           }
 
           KEY_I_LC => {
-            ui.add_task(&mut task_list, InputState::New);
+            ui.add_task(curr_item, &mut task_list, InputState::New);
+          }
+
+          KEY_E_LC => {
+            ui.add_task(curr_item, &mut task_list, InputState::Edit);
           }
           _ => {}
       }
