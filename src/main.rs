@@ -140,7 +140,8 @@ impl Ui {
           }
         }
         KEY_ESCAPE => {
-
+          //DISCARD BUFFER
+          break;
         }
 
         KEY_ENTER => {
@@ -148,8 +149,9 @@ impl Ui {
         }
         _ => {}
       }
-
     }
+
+    Err("Discarded current buffer")
 
   }
 
@@ -162,7 +164,7 @@ impl Ui {
           Ok(new_task) => {
             task_list.push(new_task);
           }
-          Err(e) => {}
+          Err(_) => {}
         }
       }
       InputState::Edit => {
