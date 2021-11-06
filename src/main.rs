@@ -5,8 +5,15 @@ const KEY_K_LC: i32 = 107;
 const KEY_J_LC: i32 = 106;
 const KEY_I_LC: i32 = 105;
 const KEY_ENTER: i32 = 10;
+const KEY_ESCAPE: i32 = 27;
 
 
+enum InputState {
+
+  Edit,
+  New,
+
+}
 enum TaskState {
 
   Done,
@@ -49,9 +56,9 @@ impl Task {
     }
   }
 
-  fn add_task(&mut self) {
+  //fn add_task(&mut self) {
 
-  }
+ // }
 }
 
 impl Ui {
@@ -74,31 +81,41 @@ impl Ui {
   
   }
 
-  fn create_input_win (max_x: i32) -> WINDOW {
+  fn create_input_win (max_x: i32, max_y: i32, prompt: &str) -> WINDOW {
 
-    let win = newwin(3, max_x - 10, 1, 5);
-    //box_(win, 0, 0); // to comment on future.
+    let win = newwin(1, max_x - 10, max_y - 5, 5);
+    mvwprintw(win, 0, 0, prompt);
     wrefresh(win);
     win
 
   }
 
-  fn read_task (&mut self) {
+  fn read_buffer (&mut self, buffer: &mut String, mode: InputState) -> Result<Task, &'static str> {
 
-    wclear(self.input_win);
     curs_set(CURSOR_VISIBILITY::CURSOR_VISIBLE);
 	  echo();
 
     let mut curs_pos: i32 = 9;
-
-
     wmove(self.input_win, 0, curs_pos);
 
-    let mut buffer: String = String::new();
+    
+    let mut max_x = 0;
+    let mut max_y = 0;
+    getmaxyx(stdscr(), &mut max_y, &mut max_x);
 
-    mvwprintw(self.input_win, 0, 0, "[ I ] > ");
     
     loop {
+      
+      match mode {
+
+        InputState::New => {
+          Ui::create_input_win(max_x, max_y,"[ I ] >");
+        }
+
+        InputState::Edit => {
+          Ui::create_input_win(max_x, max_y, "[ E ] >");
+        } 
+      }
 
       mvwprintw(self.input_win, 0, 9, &buffer);
       wmove(self.input_win, 0, curs_pos);
@@ -108,8 +125,10 @@ impl Ui {
       match key {
 
         32..=126 => { // ALPHABET LETTERS
+
           buffer.push(key as u8 as char);
           curs_pos += 1;
+
         }
         KEY_BACKSPACE => {
 
@@ -118,22 +137,46 @@ impl Ui {
             buffer.pop();
             curs_pos -= 1;
 
-            wclear(self.input_win);
-            mvwprintw(self.input_win, 0, 0, "[ I ] > ");
-
-            wmove(self.input_win, 0, curs_pos);
-
           }
+        }
+        KEY_ESCAPE => {
 
+        }
+
+        KEY_ENTER => {
+          return Ok(Task::new(buffer.to_string(), TaskState::Todo))
         }
         _ => {}
       }
 
     }
 
+  }
+
+
+  fn add_task (&mut self, task_list: &mut Vec<Task>, mode: InputState) {
+
+    match mode {
+      InputState::New => {
+        match self.read_buffer(&mut String::new(), mode) {
+          Ok(new_task) => {
+            task_list.push(new_task);
+          }
+          Err(e) => {}
+        }
+      }
+      InputState::Edit => {
+
+      }
+    }
+
+    let mut max_x = 0;
+    let mut max_y = 0;
+    getmaxyx(stdscr(), &mut max_y, &mut max_x);
+
+    Ui::create_input_win(max_x, max_y, "");
     curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
 	  noecho();
-
 
   } 
 
@@ -159,9 +202,10 @@ impl VecOp for Vec<Task> {
 
 fn ui_loop (ui: &mut Ui) {
 
-  let mut task_list: Vec<Task> = Vec::new();
 
   keypad(ui.input_win, true);
+
+  let mut task_list: Vec<Task> = Vec::new();
 
   let mut curr_item: i32 = 0;
 
@@ -173,7 +217,7 @@ fn ui_loop (ui: &mut Ui) {
 
   loop {
 
-      for i in 0..task_list.get_length_for_iterator(){
+      for i in 0..task_list.get_length_for_iterator() {
         
 
         if i == curr_item {
@@ -221,7 +265,7 @@ fn ui_loop (ui: &mut Ui) {
           }
 
           KEY_I_LC => {
-            ui.read_task();
+            ui.add_task(&mut task_list, InputState::New);
           }
           _ => {}
       }
@@ -238,10 +282,7 @@ pub fn launch_ui() {
 
   getmaxyx(stdscr(), &mut max_y, &mut max_x);
 
-  let mut ui = Ui::new(Ui::create_task_win(max_y, max_x), Ui::create_input_win(max_x));
-
-  box_(ui.input_win, 0, 0);
-  wrefresh(ui.input_win);
+  let mut ui = Ui::new(Ui::create_task_win(max_y, max_x), Ui::create_input_win(max_x, max_y, ""));
   
   ui_loop(&mut ui);
 
