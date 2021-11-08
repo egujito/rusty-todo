@@ -1,13 +1,13 @@
 extern crate ncurses;
 use ncurses::*;
 
-const KEY_K_LC: i32 = 107;
-const KEY_J_LC: i32 = 106;
-const KEY_I_LC: i32 = 105;
+// const KEY_K_LC: i32 = 107;
+// const KEY_J_LC: i32 = 106;
+// const KEY_I_LC: i32 = 105;
 const KEY_ENTER: i32 = 10;
 const KEY_ESCAPE: i32 = 27;
-const KEY_E_LC: i32 = 101;
-const KEY_D_LC: i32 = 100;
+// const KEY_E_LC: i32 = 101;
+// const KEY_D_LC: i32 = 100;
 
 enum InputState {
     Edit,
@@ -46,6 +46,8 @@ impl Task {
     }
 }
 
+//TODO: revamp the ui
+
 impl Ui {
     fn new(task_win: WINDOW, input_win: WINDOW) -> Self {
         Self {
@@ -76,7 +78,7 @@ impl Ui {
         win
     }
 
-    fn read_buffer(&mut self, buffer: &mut String, mode: InputState) -> Result<Task, &'static str> {
+    fn read_buffer(&mut self, buffer: &mut String, mode: InputState) -> Result<Task, &str> {
         curs_set(CURSOR_VISIBILITY::CURSOR_VISIBLE);
         echo();
 
@@ -175,7 +177,7 @@ fn ui_loop(ui: &mut Ui) {
                         ui.task_win,
                         i + 1,
                         1,
-                        &format!("[ X ] {}", task_list[i as usize].content),
+                        &format!("-[X] {}", task_list[i as usize].content),
                     );
                 }
 
@@ -184,7 +186,7 @@ fn ui_loop(ui: &mut Ui) {
                         ui.task_win,
                         i + 1,
                         1,
-                        &format!("[   ] {}", task_list[i as usize].content),
+                        &format!("-[ ] {}", task_list[i as usize].content),
                     );
                 }
             }
@@ -193,32 +195,32 @@ fn ui_loop(ui: &mut Ui) {
 
         let choice = wgetch(ui.task_win);
 
-        match choice {
-            KEY_K_LC => {
+        match choice as u8 as char {
+            'k' => {
                 if curr_item != 0 {
                     curr_item -= 1;
                 }
             }
 
-            KEY_J_LC => {
+            'j' => {
                 if curr_item != task_list.len() as i32 - 1 {
                     curr_item += 1;
                 }
             }
 
-            KEY_ENTER => {
+            '\n' => {
                 task_list[curr_item as usize].toggle_state();
             }
 
-            KEY_I_LC => {
+            'i' => {
                 ui.add_task(curr_item as usize, &mut task_list, InputState::New);
             }
 
-            KEY_E_LC => {
+            'e' => {
                 ui.add_task(curr_item as usize, &mut task_list, InputState::Edit);
             }
 
-            KEY_D_LC => {
+            'd' => {
                 if task_list.len() as i32 > 0 {
                     ui.delete_task(curr_item as usize, &mut task_list);
                     if curr_item == 0 {
