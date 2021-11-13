@@ -82,22 +82,24 @@ impl Ui {
         curs_set(CURSOR_VISIBILITY::CURSOR_VISIBLE);
         echo();
 
-        let mut curs_pos: i32 = 9;
+        let mut curs_pos: i32 = 10;
         wmove(self.input_win, 0, curs_pos);
+        let mut limit = 10;
 
         loop {
             match mode {
                 InputState::New => {
-                    Ui::create_input_win(Ui::stdscreen().x, Ui::stdscreen().y, "[ I ] >");
+                    Ui::create_input_win(Ui::stdscreen().x, Ui::stdscreen().y, "Add Task:");
                 }
 
                 InputState::Edit => {
-                    Ui::create_input_win(Ui::stdscreen().x, Ui::stdscreen().y, "[ E ] >");
-                    curs_pos = 9 + buffer.len() as i32
+                    Ui::create_input_win(Ui::stdscreen().x, Ui::stdscreen().y, "Edit Task:");
+                    curs_pos = 11 + buffer.len() as i32;
+                    limit = 11;
                 }
             }
 
-            mvwprintw(self.input_win, 0, 9, &buffer);
+            mvwprintw(self.input_win, 0, limit, &buffer);
             wmove(self.input_win, 0, curs_pos);
 
             let key: i32 = wgetch(self.input_win);
@@ -110,7 +112,7 @@ impl Ui {
                     curs_pos += 1;
                 }
                 KEY_BACKSPACE => {
-                    if curs_pos > 9 {
+                    if curs_pos > limit {
                         buffer.pop();
                         curs_pos -= 1;
                     }
@@ -229,9 +231,17 @@ fn ui_loop(ui: &mut Ui) {
                     curr_item -= 1;
                 }
             }
+            'q' => {
+                end(0);
+            }
             _ => {}
         }
     }
+}
+
+fn end(code: i32) {
+    endwin();
+    std::process::exit(code);
 }
 pub fn launch_ui() {
     noecho();
