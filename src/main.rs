@@ -1,6 +1,9 @@
 extern crate ncurses;
 use ncurses::*;
 
+use std::fs;
+use std::io::{self, BufRead};
+
 // const KEY_K_LC: i32 = 107;
 // const KEY_J_LC: i32 = 106;
 // const KEY_I_LC: i32 = 105;
@@ -8,6 +11,8 @@ const KEY_ENTER: i32 = 10;
 const KEY_ESCAPE: i32 = 27;
 // const KEY_E_LC: i32 = 101;
 // const KEY_D_LC: i32 = 100;
+
+const FILE: &str = "TASKS";
 
 enum InputState {
     Edit,
@@ -47,7 +52,42 @@ impl Task {
 }
 
 //TODO: revamp the ui
+fn parse_item(line: &mut str, index: i32) -> Task {
+    let mut new_status: TaskState = TaskState::Todo;
+    match &line[..8] {
+        "Todo -> " => {
+            new_status = TaskState::Todo;
+        }
+        "Done -> " => {
+            new_status = TaskState::Done;
+        }
+        error => {
+            eprintln!(
+                "Error while parsing file. Unknown expression: {} on file: {}::{}",
+                error,
+                FILE,
+                index + 1
+            );
+        }
+    }
 
+    Task {
+        content: line.replace(&line[..8], ""),
+        state: new_status,
+    }
+}
+fn load_file() -> Vec<Task> {
+    let file = fs::File::open(FILE).unwrap();
+    let mut vec: Vec<Task> = Vec::new();
+
+    for (index, line) in io::BufReader::new(file).lines().enumerate() {
+        let task = parse_item(&mut line.unwrap(), index as i32);
+        vec.push(task);
+    }
+
+    vec
+}
+// fn save_file() -> Vec<Task> {}
 impl Ui {
     fn new(task_win: WINDOW, input_win: WINDOW) -> Self {
         Self {
@@ -162,8 +202,7 @@ impl Ui {
 
 fn ui_loop(ui: &mut Ui) {
     keypad(ui.input_win, true);
-
-    let mut task_list: Vec<Task> = Vec::new();
+    let mut task_list: Vec<Task> = load_file();
 
     let mut curr_item: i32 = 0;
 
