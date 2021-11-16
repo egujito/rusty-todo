@@ -54,6 +54,9 @@ impl Task {
 //TODO: revamp the ui
 fn parse_item(line: &mut str, index: i32) -> Result<Task, String> {
     let new_status: TaskState;
+    if line == "" {
+        return Err("File is empty".to_string());
+    }
     match &line[..8] {
         "Todo -> " => {
             new_status = TaskState::Todo;
