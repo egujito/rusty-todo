@@ -88,11 +88,16 @@ fn load_file() -> Vec<Task> {
                 };
                 vec.push(new_task);
             }
-            Err(e) => {
-                endwin();
-                println!("{}", e);
-                std::process::exit(1);
-            }
+            Err(e) => match e.as_str() {
+                "File is empty" => {
+                    return Vec::new();
+                }
+                _ => {
+                    endwin();
+                    println!("{}", e);
+                    std::process::exit(1);
+                }
+            },
         }
     }
     vec
