@@ -2,7 +2,7 @@ extern crate ncurses;
 use ncurses::*;
 
 use std::fs;
-use std::io::{self, BufRead};
+use std::io::{self, BufRead, Write};
 
 // const KEY_K_LC: i32 = 107;
 // const KEY_J_LC: i32 = 106;
@@ -87,7 +87,21 @@ fn load_file() -> Vec<Task> {
 
     vec
 }
-// fn save_file() -> Vec<Task> {}
+
+fn save_file(task_list: &Vec<Task>) {
+    let mut file = fs::File::create(FILE).unwrap();
+    for task in task_list.iter() {
+        match task.state {
+            TaskState::Todo => {
+                writeln!(file, "Todo -> {}", task.content).unwrap();
+            }
+            TaskState::Done => {
+                writeln!(file, "Done -> {}", task.content).unwrap();
+            }
+        }
+    }
+}
+
 impl Ui {
     fn new(task_win: WINDOW, input_win: WINDOW) -> Self {
         Self {
@@ -271,15 +285,16 @@ fn ui_loop(ui: &mut Ui) {
                 }
             }
             'q' => {
-                end(0);
+                end(0, &task_list);
             }
             _ => {}
         }
     }
 }
 
-fn end(code: i32) {
+fn end(code: i32, task_list: &Vec<Task>) {
     endwin();
+    save_file(&task_list);
     std::process::exit(code);
 }
 pub fn launch_ui() {
