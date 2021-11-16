@@ -52,8 +52,8 @@ impl Task {
 }
 
 //TODO: revamp the ui
-fn parse_item(line: &mut str, index: i32) -> Task {
-    let mut new_status: TaskState = TaskState::Todo;
+fn parse_item(line: &mut str, index: i32) -> Result<Task, String> {
+    let new_status: TaskState;
     match &line[..8] {
         "Todo -> " => {
             new_status = TaskState::Todo;
@@ -61,30 +61,37 @@ fn parse_item(line: &mut str, index: i32) -> Task {
         "Done -> " => {
             new_status = TaskState::Done;
         }
-        error => {
-            eprintln!(
-                "Error while parsing file. Unknown expression: {} on file: {}::{}",
-                error,
-                FILE,
-                index + 1
-            );
+        exp => {
+            let err_str = format!("Error while parsing item. Unknow expression: {} at {}::{}. Expected either Done -> or Todo ->", exp, FILE, index+1);
+            return Err(err_str);
         }
     }
 
-    Task {
+    Ok(Task {
         content: line.replace(&line[..8], ""),
         state: new_status,
-    }
+    })
 }
 fn load_file() -> Vec<Task> {
     let file = fs::File::open(FILE).unwrap();
     let mut vec: Vec<Task> = Vec::new();
 
     for (index, line) in io::BufReader::new(file).lines().enumerate() {
-        let task = parse_item(&mut line.unwrap(), index as i32);
-        vec.push(task);
+        match parse_item(&mut line.unwrap(), index as i32) {
+            Ok(task) => {
+                let new_task = Task {
+                    content: task.content,
+                    state: task.state,
+                };
+                vec.push(new_task);
+            }
+            Err(e) => {
+                endwin();
+                println!("{}", e);
+                std::process::exit(1);
+            }
+        }
     }
-
     vec
 }
 
