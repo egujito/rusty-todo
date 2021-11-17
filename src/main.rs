@@ -54,7 +54,7 @@ impl Task {
 //TODO: revamp the ui
 fn parse_item(line: &mut str, _index: i32) -> Result<Task, String> {
     let new_status: TaskState;
-    if line.len() > 8 || line != "" {
+    if line.len() > 8 || line.replace(" ", "") != "" {
         match &line[..8] {
             "Todo -> " => {
                 new_status = TaskState::Todo;
@@ -66,8 +66,12 @@ fn parse_item(line: &mut str, _index: i32) -> Result<Task, String> {
                 return Err("continue".to_string());
             }
         }
+        let new_content = line.replace(&line[..8], "");
+        if new_content.replace(" ", "") == "" {
+            return Err("continue".to_string());
+        }
         Ok(Task {
-            content: line.replace(&line[..8], ""),
+            content: new_content,
             state: new_status,
         })
     } else {
