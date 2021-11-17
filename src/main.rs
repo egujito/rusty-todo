@@ -3,7 +3,7 @@ use ncurses::*;
 
 use std::fs;
 use std::io::{self, BufRead, Write};
-
+use std::process::Command;
 // const KEY_K_LC: i32 = 107;
 // const KEY_J_LC: i32 = 106;
 // const KEY_I_LC: i32 = 105;
@@ -52,30 +52,30 @@ impl Task {
 }
 
 //TODO: revamp the ui
-fn parse_item(line: &mut str, index: i32) -> Result<Task, String> {
+fn parse_item(line: &mut str, _index: i32) -> Result<Task, String> {
     let new_status: TaskState;
-    if line == "" {
-        return Err("File is empty".to_string());
+    if line.len() > 8 || line != "" {
+        match &line[..8] {
+            "Todo -> " => {
+                new_status = TaskState::Todo;
+            }
+            "Done -> " => {
+                new_status = TaskState::Done;
+            }
+            _exp => {
+                return Err("continue".to_string());
+            }
+        }
+        Ok(Task {
+            content: line.replace(&line[..8], ""),
+            state: new_status,
+        })
+    } else {
+        return Err("continue".to_string());
     }
-    match &line[..8] {
-        "Todo -> " => {
-            new_status = TaskState::Todo;
-        }
-        "Done -> " => {
-            new_status = TaskState::Done;
-        }
-        exp => {
-            let err_str = format!("Error while parsing item. Unknow expression: {} at {}::{}. Expected either Done -> or Todo ->", exp, FILE, index+1);
-            return Err(err_str);
-        }
-    }
-
-    Ok(Task {
-        content: line.replace(&line[..8], ""),
-        state: new_status,
-    })
 }
 fn load_file() -> Vec<Task> {
+    Command::new(&format!("sed -i '/^$/d' {}", FILE));
     let file = fs::File::open(FILE).unwrap();
     let mut vec: Vec<Task> = Vec::new();
 
@@ -92,11 +92,7 @@ fn load_file() -> Vec<Task> {
                 "File is empty" => {
                     return Vec::new();
                 }
-                _ => {
-                    endwin();
-                    println!("{}", e);
-                    std::process::exit(1);
-                }
+                _ => {}
             },
         }
     }
