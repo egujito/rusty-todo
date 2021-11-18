@@ -207,15 +207,20 @@ impl Ui {
                 }
                 KEY_ESCAPE => {
                     //DISCARD BUFFER
-                    break;
+                    return Err("Buffer was discarded");
                 }
 
-                KEY_ENTER => return Ok(Task::new(buffer.to_string(), TaskState::Todo)),
+                KEY_ENTER => {
+                    if !buffer.replace(" ", "").is_empty() {
+                        break;
+                    } else {
+                        return Err("buffer was empty");
+                    }
+                }
                 _ => {}
             }
         }
-
-        Err("Discarded current buffer")
+        Ok(Task::new(buffer.to_string(), TaskState::Todo))
     }
 
     fn add_task(&mut self, curr_item: usize, task_list: &mut Vec<Task>, mode: InputState) {
