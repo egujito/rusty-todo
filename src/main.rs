@@ -12,7 +12,7 @@ const KEY_ESCAPE: i32 = 27;
 // const KEY_E_LC: i32 = 101;
 // const KEY_D_LC: i32 = 100;
 
-const FILE: &str = "TASKS";
+const FILE_PATH: &str = "TASKS";
 
 enum InputState {
     Edit,
@@ -51,7 +51,6 @@ impl Task {
     }
 }
 
-//TODO: revamp the ui
 fn parse_item(line: &mut str, _index: i32) -> Result<Task, String> {
     let new_status: TaskState;
     if line.len() > 8 || line.replace(" ", "") != "" {
@@ -79,8 +78,8 @@ fn parse_item(line: &mut str, _index: i32) -> Result<Task, String> {
     }
 }
 fn load_file() -> Vec<Task> {
-    Command::new(&format!("sed -i '/^$/d' {}", FILE));
-    let file = fs::File::open(FILE).unwrap();
+    Command::new(&format!("sed -i '/^$/d' {}", FILE_PATH));
+    let file = fs::File::open(FILE_PATH).unwrap();
     let mut vec: Vec<Task> = Vec::new();
 
     for (index, line) in io::BufReader::new(file).lines().enumerate() {
@@ -104,7 +103,7 @@ fn load_file() -> Vec<Task> {
 }
 
 fn save_file(task_list: &Vec<Task>) {
-    let mut file = fs::File::create(FILE).unwrap();
+    let mut file = fs::File::create(FILE_PATH).unwrap(); // Always create a new file that ovewrites previous file
     for task in task_list.iter() {
         match task.state {
             TaskState::Todo => {
@@ -151,9 +150,9 @@ impl Ui {
         curs_set(CURSOR_VISIBILITY::CURSOR_VISIBLE);
         echo();
 
-        let mut curs_pos: i32 = 10;
-        wmove(self.input_win, 0, curs_pos);
-        let mut limit = 10;
+        let mut curs_pos: usize = buffer.len();
+        let mut limit = 10; // Works with default values
+        wmove(self.input_win, 0, limit + curs_pos as i32);
 
         loop {
             match mode {
@@ -163,27 +162,47 @@ impl Ui {
 
                 InputState::Edit => {
                     Ui::create_input_win(Ui::stdscreen().x, Ui::stdscreen().y, "Edit Task:");
-                    curs_pos = 11 + buffer.len() as i32;
                     limit = 11;
                 }
             }
 
             mvwprintw(self.input_win, 0, limit, &buffer);
-            wmove(self.input_win, 0, curs_pos);
+            wmove(self.input_win, 0, limit + curs_pos as i32);
 
+            if curs_pos > buffer.len() {
+                curs_pos = buffer.len();
+            }
             let key: i32 = wgetch(self.input_win);
 
             match key {
                 32..=126 => {
                     // ALPHABET LETTERS
-
-                    buffer.push(key as u8 as char);
+                    if curs_pos >= buffer.len() {
+                        buffer.push(key as u8 as char);
+                    } else {
+                        buffer.insert(curs_pos, key as u8 as char);
+                    }
                     curs_pos += 1;
                 }
+
                 KEY_BACKSPACE => {
-                    if curs_pos > limit {
-                        buffer.pop();
+                    if curs_pos > 0 {
                         curs_pos -= 1;
+                        if curs_pos < buffer.len() {
+                            buffer.remove(curs_pos);
+                        }
+                    }
+                }
+
+                KEY_LEFT => {
+                    if curs_pos > 0 {
+                        curs_pos -= 1;
+                    }
+                }
+
+                KEY_RIGHT => {
+                    if curs_pos < buffer.len() {
+                        curs_pos += 1;
                     }
                 }
                 KEY_ESCAPE => {
@@ -229,11 +248,20 @@ impl Ui {
     }
 }
 
+fn end(code: i32, task_list: &Vec<Task>) {
+    endwin();
+    save_file(&task_list);
+    std::process::exit(code);
+}
+
 fn ui_loop(ui: &mut Ui) {
     keypad(ui.input_win, true);
     let mut task_list: Vec<Task> = load_file();
 
     let mut curr_item: i32 = 0;
+
+    scrollok(ui.task_win, true);
+    idlok(ui.task_win, true);
 
     loop {
         for i in 0..task_list.len() as i32 {
@@ -307,11 +335,6 @@ fn ui_loop(ui: &mut Ui) {
     }
 }
 
-fn end(code: i32, task_list: &Vec<Task>) {
-    endwin();
-    save_file(&task_list);
-    std::process::exit(code);
-}
 pub fn launch_ui() {
     noecho();
     curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
