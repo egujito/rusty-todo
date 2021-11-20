@@ -124,6 +124,49 @@ impl Ui {
         }
     }
 
+    fn accept_input(&mut self, curr_item: &mut i32, task_list: &mut Vec<Task>) {
+        let choice = wgetch(self.task_win);
+
+        match choice as u8 as char {
+            'k' => {
+                if *curr_item != 0 {
+                    *curr_item -= 1;
+                }
+            }
+
+            'j' => {
+                if *curr_item != task_list.len() as i32 - 1 {
+                    *curr_item += 1;
+                }
+            }
+
+            '\n' => {
+                task_list[*curr_item as usize].toggle_state();
+            }
+
+            'i' => {
+                self.add_task(*curr_item as usize, task_list, InputState::New);
+            }
+
+            'e' => {
+                self.add_task(*curr_item as usize, task_list, InputState::Edit);
+            }
+
+            'd' => {
+                if task_list.len() as i32 > 0 {
+                    self.delete_task(*curr_item as usize, task_list);
+                    if *curr_item == 0 {
+                        *curr_item = 1;
+                    }
+                    *curr_item -= 1;
+                }
+            }
+            'q' => {
+                end(0, &task_list);
+            }
+            _ => {}
+        }
+    }
     fn stdscreen() -> Vec2d {
         let mut x = 0;
         let mut y = 0;
@@ -177,7 +220,7 @@ impl Ui {
             match key {
                 32..=126 => {
                     // ALPHABET LETTERS
-                    if curs_pos >= buffer.len() {
+                    if curs_pos == buffer.len() {
                         buffer.push(key as u8 as char);
                     } else {
                         buffer.insert(curs_pos, key as u8 as char);
@@ -268,6 +311,7 @@ fn ui_loop(ui: &mut Ui) {
     scrollok(ui.task_win, true);
     idlok(ui.task_win, true);
 
+    // TODO: Implement better iteration
     loop {
         for i in 0..task_list.len() as i32 {
             if i == curr_item {
@@ -295,48 +339,7 @@ fn ui_loop(ui: &mut Ui) {
             }
             wattroff(ui.task_win, A_REVERSE());
         }
-
-        let choice = wgetch(ui.task_win);
-
-        match choice as u8 as char {
-            'k' => {
-                if curr_item != 0 {
-                    curr_item -= 1;
-                }
-            }
-
-            'j' => {
-                if curr_item != task_list.len() as i32 - 1 {
-                    curr_item += 1;
-                }
-            }
-
-            '\n' => {
-                task_list[curr_item as usize].toggle_state();
-            }
-
-            'i' => {
-                ui.add_task(curr_item as usize, &mut task_list, InputState::New);
-            }
-
-            'e' => {
-                ui.add_task(curr_item as usize, &mut task_list, InputState::Edit);
-            }
-
-            'd' => {
-                if task_list.len() as i32 > 0 {
-                    ui.delete_task(curr_item as usize, &mut task_list);
-                    if curr_item == 0 {
-                        curr_item = 1;
-                    }
-                    curr_item -= 1;
-                }
-            }
-            'q' => {
-                end(0, &task_list);
-            }
-            _ => {}
-        }
+        ui.accept_input(&mut curr_item, &mut task_list);
     }
 }
 
