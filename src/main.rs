@@ -124,7 +124,7 @@ impl Ui {
         }
     }
 
-    fn accept_input(&mut self, curr_item: &mut i32, task_list: &mut Vec<Task>) {
+    fn accept_input(&mut self, curr_item: &mut usize, task_list: &mut Vec<Task>) {
         let choice = wgetch(self.task_win);
 
         match choice as u8 as char {
@@ -135,26 +135,26 @@ impl Ui {
             }
 
             'j' => {
-                if *curr_item != task_list.len() as i32 - 1 {
+                if *curr_item != task_list.len() - 1 {
                     *curr_item += 1;
                 }
             }
 
             '\n' => {
-                task_list[*curr_item as usize].toggle_state();
+                task_list[*curr_item].toggle_state();
             }
 
             'i' => {
-                self.add_task(*curr_item as usize, task_list, InputState::New);
+                self.add_task(*curr_item, task_list, InputState::New);
             }
 
             'e' => {
-                self.add_task(*curr_item as usize, task_list, InputState::Edit);
+                self.add_task(*curr_item, task_list, InputState::Edit);
             }
 
             'd' => {
                 if task_list.len() as i32 > 0 {
-                    self.delete_task(*curr_item as usize, task_list);
+                    self.delete_task(*curr_item, task_list);
                     if *curr_item == 0 {
                         *curr_item = 1;
                     }
@@ -306,23 +306,22 @@ fn ui_loop(ui: &mut Ui) {
     keypad(ui.input_win, true);
     let mut task_list: Vec<Task> = load_file();
 
-    let mut curr_item: i32 = 0;
+    let mut curr_item: usize = 0;
 
     scrollok(ui.task_win, true);
     idlok(ui.task_win, true);
 
-    // TODO: Implement better iteration
     loop {
-        for i in 0..task_list.len() as i32 {
+        for (i, task) in task_list.iter().enumerate() {
             if i == curr_item {
                 wattron(ui.task_win, A_REVERSE());
             }
 
-            match task_list[i as usize].state {
+            match task.state {
                 TaskState::Done => {
                     mvwprintw(
                         ui.task_win,
-                        i + 1,
+                        i as i32 + 1,
                         1,
                         &format!("-[X] {}", task_list[i as usize].content),
                     );
@@ -331,7 +330,7 @@ fn ui_loop(ui: &mut Ui) {
                 TaskState::Todo => {
                     mvwprintw(
                         ui.task_win,
-                        i + 1,
+                        i as i32 + 1,
                         1,
                         &format!("-[ ] {}", task_list[i as usize].content),
                     );
