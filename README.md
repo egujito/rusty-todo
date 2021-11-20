@@ -18,7 +18,9 @@ Compile & run:
 $ cargo run
 ```
 
-# guide
+# Guide
+
+### Managing tasks:
 
 Move upwards: <kbd>k</kbd>
 
@@ -31,3 +33,23 @@ Edit task: <kbd>e</kbd>
 Delete current task: <kbd>d</kbd>
 
 Toggle task state: <kbd>Enter</kbd>
+
+Quit with exit code 0 (automatically saves state): <kbd>q</kbd>
+
+### Inserting/editing tasks:
+
+Discard the buffer: <kbd>Escape</kbd>
+
+Confirm addition/edition of task: <kbd>Enter</kbd>
+
+Cursor to the left: <kbd>Left Arrow Key</kbd>
+
+Cursor to the right: <kbd>Right Arrow Key</kbd>
+
+Delete a character from the buffer: <kbd>Backspace</kbd>
+
+
+# Todo
+
+> Implement the way of dragging tasks up or down the list
+
