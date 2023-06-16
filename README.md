@@ -4,6 +4,9 @@ I wanted to remake a project I had done that used `ncurses.h` in C, the code was
 
 (not finished yet)
 
+_rusty-todo in edit mode (```InputState::Edit```):_
+
+![](https://raw.githubusercontent.com/egujito/rusty-todo/master/e1.png)
 # compiling and running
 
 Compile:
@@ -52,4 +55,3 @@ Delete a character from the buffer: <kbd>Backspace</kbd>
 # Todo
 
 > Implement the way of dragging tasks up or down the list
-
